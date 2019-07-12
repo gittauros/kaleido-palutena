@@ -1,7 +1,7 @@
 # AQS源码学习 一
 
 ### 关键信息
-> jdk 1.8
+> jdk 1.8<br/>
 > java.util.concurrent.locks.AbstractQueuedSynchronizer
 
 ### 摘要
