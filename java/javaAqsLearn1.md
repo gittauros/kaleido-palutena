@@ -18,7 +18,7 @@ AQS直译就是“抽象队列同步器”，有如下功能：
 
 使用 锁/竞争资源 一般的流程如下：
 ```mermaid
-graph LR 
+graph LR
 st(开始)
 e(结束)
 lock{获取 锁/竞争资源}
@@ -39,26 +39,6 @@ block -->|否| failCode
 failCode --> e
 ```
 
-
-
-<!-- 
-```flow
-st=>start: 开始
-e=>end: 结束
-lock=>condition: 获取 锁/竞争资源 成功
-block=>condition: 不阻塞等待
-failCode=>operation: 其它事务
-syncCode=>operation: 同步事务
-release=>operation: 释放 锁/竞争资源
-wait=>operation: 阻塞等待
-
-st->lock()
-lock(yes)->syncCode->release->e
-lock(no)->block()
-block(no)->lock()
-block(yes)->failCode->e
-``` 
--->
 ### volatile int state
 ```java
 //同步状态字段
@@ -101,13 +81,30 @@ public final void acquire(int arg) {
 ```
 此方法阻塞等待获取资源，获取失败时会阻塞等待直至获取成功，流程逻辑大致为：
 
+```mermaid
+graph LR
+st(开始)
+e(结束)
+tryLock{获取 锁/竞争资源}
+isInterrupt{当前线程是否被中断}
+queued[排队阻塞等待直至获取成功]
+interrupt[维护线程中断状态]
+
+st --> tryLock
+tryLock -->|成功| e
+tryLock -->|失败| queued
+queued --> isInterrupt
+isInterrupt -->|是| interrupt
+interrupt --> e
+isInterrupt -->|否| e
+```
 <!-- 
 ```flow
 st=>start: 开始
 e=>end: 结束
 tryLock=>condition: 获取 锁/竞争资源 成功
 queued=>operation: 排队阻塞等待直至获取成功
-isInterrupt=>condition: 是否被中断
+isInterrupt=>condition: 当前线程是否被中断
 interrupt=>operation: 维护线程中断状态
 
 st->tryLock()
