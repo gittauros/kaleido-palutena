@@ -96,8 +96,8 @@ tryLock -->|成功| e
 tryLock -->|失败| queued
 queued --> isInterrupt
 isInterrupt -->|是| interrupt
-interrupt --> e
 isInterrupt -->|否| e
+interrupt --> e
 ```
 
 ### release
