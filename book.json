@@ -3,7 +3,13 @@
     "description":"JAVA码农漫漫长路",
     "author": "tauros",
     "plugins": [
-        "mermaid",
-        "splitter"
-    ]
+        "mermaid-gb3",
+        "splitter",
+        "github"
+    ],
+    "pluginsConfig": {
+        "github": {
+            "url": "https://github.com/gittauros/kaleido-palutena"
+        }
+    }
 }
