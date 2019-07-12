@@ -3,10 +3,12 @@
 ### 关键信息
 > jdk 1.8
 > java.util.concurrent.locks.AbstractQueuedSynchronizer
+
 ### 摘要
 - state字段
 - acquire方法
 - release方法
+
 ### 锁/竞争资源
 AQS直译就是“抽象队列同步器”，有如下功能：
 - 原子获取竞争资源
@@ -15,6 +17,11 @@ AQS直译就是“抽象队列同步器”，有如下功能：
 - 支持条件等待队列
 
 使用 锁/竞争资源 一般的流程如下：
+```mermaid
+graph LR 
+id1
+```
+
 ```flow
 st=>start: 开始
 e=>end: 结束
