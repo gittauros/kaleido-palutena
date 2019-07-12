@@ -18,10 +18,27 @@ AQS直译就是“抽象队列同步器”，有如下功能：
 
 使用 锁/竞争资源 一般的流程如下：
 ```mermaid
-graph LR 
-id1
+graph TB 
+st(开始)
+e(结束)
+lock{获取 锁/竞争资源 成功}
+block{失败循环等待}
+failCode[其它事务]
+syncCode[同步事务]
+release[释放 锁/竞争资源]
+wait[阻塞等待]
+
+st --> lock
+lock -->|成功| syncCode
+syncCode --> release
+release --> e
+lock -->|失败| block
+block -->|是| lock
+block -->|否| failCode
+failCode --> e
 ```
 
+<!-- 
 ```flow
 st=>start: 开始
 e=>end: 结束
@@ -37,7 +54,8 @@ lock(yes)->syncCode->release->e
 lock(no)->block()
 block(no)->lock()
 block(yes)->failCode->e
-```
+``` 
+-->
 ### volatile int state
 ```java
 //同步状态字段
@@ -79,6 +97,8 @@ public final void acquire(int arg) {
 }
 ```
 此方法阻塞等待获取资源，获取失败时会阻塞等待直至获取成功，流程逻辑大致为：
+
+<!-- 
 ```flow
 st=>start: 开始
 e=>end: 结束
@@ -93,5 +113,6 @@ tryLock(no)->queued->isInterrupt()
 isInterrupt(yes)->interrupt->e
 isInterrupt(no)->e
 ```
+-->
 ### release
 
