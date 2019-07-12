@@ -140,7 +140,8 @@ public final boolean release(int arg) {
     return false;
 }
 ```
-尝试释放资源，成功则唤醒等待队列头结点，流程逻辑大致为：
+此方法尝试释放资源，成功则唤醒等待队列头结点，流程逻辑大致为：
+
 ```mermaid
 graph LR
 st(开始)
@@ -161,4 +162,49 @@ rFalse --> e
 rTrue --> e
 ```
 
+*tryRelease(arg)* 与之前相同，模板方法，子类实现，释放成功返回true，举一些返回值例子：
+- ReentrantLock的实现为释放后锁是否完全被释放，也就是重入数为0
+- ReentrantReadWriteLock的实现为写锁的重入数是否为0（写锁完全释放）
+
+所以ReentrantLock和ReentrantReadWriteLock是当 **排它锁完全释放** 时才会唤醒等待队列去竞争锁，避免了一些无效竞争
+> 虽然release方法会把tryRelease的值返回出去，但是ReentrantLock和ReentrantReadWriteLock的unlock方法都不关心release的返回值
+
+*unparkSuccessor* 会清空取消等待的节点并唤醒等待队列的第一个有效等待节点的线程
+
+### releaseShared
+```java
+public final boolean releaseShared(int arg) {
+    if (tryReleaseShared(arg)) {
+        doReleaseShared();
+        return true;
+    }
+    return false;
+}
+```
+释放共享模式资源，如读锁、信号量
+与release方法整体逻辑也差不多，其中的头结点状态判断和线程唤醒也都是被包含在了doReleaseShared方法中
+
+*tryReleaseShared(arg)* 又双叒是个模板方法，子类实现，案例附上：
+- Semaphore的实现为剩余信号量释放数量
+- ReentrantReadWriteLock的实现为释放一次读锁，其中arg参数未被使用，固定是释放一次读锁
+
+此方法返回值意义也不尽相同：
+- Semaphore的实现为释放信号量成功，除非数量溢出，否则一定为true
+- ReentrantReadWriteLock的实现为是否全部读锁都释放完毕（包括每个读锁的重入数也都完全释放）
+
+*doReleaseShared* 会判断是否有节点需要唤醒，是的话会清空等待队列的取消等待节点，唤醒第一个有效节点开始以共享模式竞争
+
+### 总结
+本篇基本介绍了AQS提供的 **锁/竞争资源** 统一抽象竞争流程：
+- 竞争
+- 阻塞等待
+- 释放
+
+通过acquire和acquireShared方法来竞争获取，release和released方法来释放
+子类通过实现tryXXX方法，**结合原子操作修改state字段** 则可以实现不同的效果，例如：
+- 信号量
+- 可重入锁
+- 可重入读写锁
+
+> state字段的原子操作，基本都是在子类实现的tryXXX方法中操作的，不在AQS中
 > 关于等待队列结构、acquireQueued、doAcquireShared、unparkSuccessor本篇不细说
