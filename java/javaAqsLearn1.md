@@ -17,6 +17,7 @@ AQS直译就是“抽象队列同步器”，有如下功能：
 - 支持条件等待队列
 
 使用 锁/竞争资源 一般的流程如下：
+
 ```mermaid
 graph LR
 st(开始)
@@ -98,21 +99,6 @@ isInterrupt -->|是| interrupt
 interrupt --> e
 isInterrupt -->|否| e
 ```
-<!-- 
-```flow
-st=>start: 开始
-e=>end: 结束
-tryLock=>condition: 获取 锁/竞争资源 成功
-queued=>operation: 排队阻塞等待直至获取成功
-isInterrupt=>condition: 当前线程是否被中断
-interrupt=>operation: 维护线程中断状态
 
-st->tryLock()
-tryLock(yes)->e
-tryLock(no)->queued->isInterrupt()
-isInterrupt(yes)->interrupt->e
-isInterrupt(no)->e
-```
--->
 ### release
 
