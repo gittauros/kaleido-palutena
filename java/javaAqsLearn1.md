@@ -206,5 +206,5 @@ public final boolean releaseShared(int arg) {
 - 可重入锁
 - 可重入读写锁
 
-> state字段的原子操作，基本都是在子类实现的tryXXX方法中操作的，不在AQS中
+> state字段的原子操作，基本都是在子类实现的tryXXX方法中操作的，不在AQS中<br/>
 > 关于等待队列结构、acquireQueued、doAcquireShared、unparkSuccessor本篇不细说
