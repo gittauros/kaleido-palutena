@@ -109,6 +109,7 @@ interrupt --> e
 
 *selfInterrupt()* 用来维护中断状态
 
+### acquireShared
 有排它获取就有共享获取，也就是 *acquireShared(arg)*
 ```java
 //共享获取资源/锁
@@ -126,8 +127,6 @@ public final void acquireShared(int arg) {
 
 *doAcquireShared(arg)* 会把当前线程包装成 **共享节点** 加入等待队列并阻塞当前线程，被唤醒后会再次调用tryAcquireShared，直至成功为止
 
-> 关于等待队列结构、acquireQueued和doAcquireShared本篇不细说
-
 ### release
 ```java
 //释放锁/资源
@@ -141,3 +140,25 @@ public final boolean release(int arg) {
     return false;
 }
 ```
+尝试释放资源，成功则唤醒等待队列头结点，流程逻辑大致为：
+```mermaid
+graph LR
+st(开始)
+e(结束)
+tryRelease{释放 锁/竞争资源}
+head{头结点存在<br/>且等待状态有意义}
+unpark[唤醒头结点]
+rTrue[返回成功]
+rFalse[返回失败]
+
+st --> tryRelease
+tryRelease -->|成功| head
+tryRelease -->|失败| rFalse
+head -->|是| unpark
+head -->|否| rTrue
+unpark --> rTrue
+rFalse --> e
+rTrue --> e
+```
+
+> 关于等待队列结构、acquireQueued、doAcquireShared、unparkSuccessor本篇不细说
