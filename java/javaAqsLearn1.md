@@ -18,7 +18,7 @@ AQS直译就是“抽象队列同步器”，有如下功能：
 
 使用 锁/竞争资源 一般的流程如下：
 ```mermaid
-graph TB 
+graph LR 
 st(开始)
 e(结束)
 lock{获取 锁/竞争资源 成功}
@@ -33,7 +33,8 @@ lock -->|成功| syncCode
 syncCode --> release
 release --> e
 lock -->|失败| block
-block -->|是| lock
+block -->|是| wait
+wait --> lock
 block -->|否| failCode
 failCode --> e
 ```
