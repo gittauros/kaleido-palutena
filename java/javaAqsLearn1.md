@@ -200,7 +200,7 @@ public final boolean releaseShared(int arg) {
 - 阻塞等待
 - 释放
 
-通过acquire和acquireShared方法来竞争获取，release和released方法来释放
+通过acquire和acquireShared方法来竞争获取，release和releaseShared方法来释放资源
 子类通过实现tryXXX方法，**结合原子操作修改state字段** 则可以实现不同的效果，例如：
 - 信号量
 - 可重入锁
