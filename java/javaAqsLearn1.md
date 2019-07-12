@@ -21,7 +21,7 @@ AQS直译就是“抽象队列同步器”，有如下功能：
 graph LR 
 st(开始)
 e(结束)
-lock{获取 锁/竞争资源 成功}
+lock{获取 锁/竞争资源}
 block{失败循环等待}
 failCode[其它事务]
 syncCode[同步事务]
