@@ -50,9 +50,8 @@ private volatile int state;
 - 可见性
 - 有序性
 
-这三个性质也就是锁需要的三个性质，volatile形容的变量本身就可以用来做原子操作，可以用来实现锁或者可竞争资源
-&nbsp;
-获取锁和释放锁的过程就需要操作这个state字段，但是单使用一个字段不行
+这三个性质也就是锁需要的三个性质，volatile形容的变量本身就可以用来做原子操作，可以用来实现锁或者可竞争资源<br/>
+获取锁和释放锁的过程就需要操作这个state字段，但是单使用一个字段不行<br/>
 需要配合cas操作来进行  **判断+更换** 的原子操作
 ```java
 //state的getter
@@ -69,7 +68,7 @@ protected final boolean compareAndSetState(int expect, int update) {
     return unsafe.compareAndSwapInt(this, stateOffset, expect, update);
 }
 ```
-cas操作判断当前值是否和expect相等，相等则替换成update
+cas操作判断当前值是否和expect相等，相等则替换成update<br/>
 由于操作满足原子性，结果满足可见性，所以当一个线程cas修改成功时，其他线程必然修改失败，此处就有了排它性
 ### acquire
 ```java
@@ -100,7 +99,7 @@ isInterrupt -->|否| e
 interrupt --> e
 ```
 
-*tryAcquire(arg)* 是个模板方法，交由子类实现具体逻辑，方法意为尝试获取资源或锁，只做尝试，不进入队列阻塞等待
+*tryAcquire(arg)* 是个模板方法，交由子类实现具体逻辑，方法意为尝试获取资源或锁，只做尝试，不进入队列阻塞等待<br/>
 参数arg这里并没展现出具体意义，根据不同的实现会有不同的用处，例如：
 - ReentrantLock的实现为增加重入次数
 - ReentrantReadWriteLock的实现为增加写锁重入次数
@@ -120,7 +119,7 @@ public final void acquireShared(int arg) {
 ```
 这里的逻辑貌似简单了些，其实内部逻辑和acquire方法是一样的，也是失败了会加入等待队列阻塞等待直至成功，成功后会判断维护线程中断状态，逻辑被包含在了doAcquireShared方法中
 
-*tryAcquireShared(arg)* 同样是个模板方法，交由子类实现具体逻辑，意义稍不一样，为以共享方式尝试获取，可以按共享锁来理解
+*tryAcquireShared(arg)* 同样是个模板方法，交由子类实现具体逻辑，意义稍不一样，为以共享方式尝试获取，可以按共享锁来理解<br/>
 它的返回值为负数表示失败（实际大多为-1），返回值大于等于0时意义也不尽相同，例如：
 - Semaphore的实现为剩余信号量数量
 - ReentrantReadWriteLock的实现为直接返回1表示获取读锁成功
@@ -182,7 +181,7 @@ public final boolean releaseShared(int arg) {
     return false;
 }
 ```
-释放共享模式资源，如读锁、信号量
+释放共享模式资源，如读锁、信号量<br/>
 与release方法整体逻辑也差不多，其中的头结点状态判断和线程唤醒也都是被包含在了doReleaseShared方法中
 
 *tryReleaseShared(arg)* 又双叒是个模板方法，子类实现，案例附上：
@@ -201,7 +200,7 @@ public final boolean releaseShared(int arg) {
 - 阻塞等待
 - 释放
 
-通过acquire和acquireShared方法来竞争获取，release和releaseShared方法来释放资源
+通过acquire和acquireShared方法来竞争获取，release和releaseShared方法来释放资源<br/>
 子类通过实现tryXXX方法，**结合原子操作修改state字段** 则可以实现不同的效果，例如：
 - 信号量
 - 可重入锁
