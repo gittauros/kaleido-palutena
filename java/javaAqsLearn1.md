@@ -129,7 +129,7 @@ public final void acquireShared(int arg) {
 
 ### release
 ```java
-//释放共享模式锁/资源
+//释放锁/资源
 public final boolean release(int arg) {
     if (tryRelease(arg)) {
         Node h = head;
@@ -173,6 +173,7 @@ rTrue --> e
 
 ### releaseShared
 ```java
+//释放共享模式锁/资源
 public final boolean releaseShared(int arg) {
     if (tryReleaseShared(arg)) {
         doReleaseShared();
