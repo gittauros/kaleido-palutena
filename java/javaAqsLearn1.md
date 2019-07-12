@@ -1,8 +1,8 @@
 # AQS源码学习 一
 
 ### 关键信息
-> jdk 1.8
-> java.util.concurrent.locks.AbstractQueuedSynchronizer
+> - jdk 1.8
+> - java.util.concurrent.locks.AbstractQueuedSynchronizer
 
 ### 摘要
 - state字段
