@@ -59,20 +59,20 @@ class Solution {
 
 ```mermaid
 graph TB
-    subgraph parent
-        root[root]
-        left[left]
-        right[right]
+    subgraph 原数组
+        root[根节点 下标 0]
+        left[左子树区间 下标 l->m]
+        right[右子树区间 下标 m+1->r]
     end
-    subgraph lchild
-        lchdRoot[lchild]
-        lchdLeft[left]
-        lchdRight[right]
+    subgraph 左子树
+        lchdRoot[左子树根节点 下标 l]
+        lchdLeft[左子树左子树区间 下标 l+1->u]
+        lchdRight[左子树右子树区间 下标 u+1->r]
     end
-    subgraph lchildrchild
-        lchdrchdRoot[lchildrchild]
-        lchdrchdLeft[left]
-        lchdrchdRight[right]
+    subgraph 左子树右子树
+        lchdrchdRoot[左子树右子树根节点 下标 u+1]
+        lchdrchdLeft[左子树右子树左子树区间 下标 u+2->i]
+        lchdrchdRight[左子树右子树右子树区间 下标 i+1->r]
     end
 
     left -->|根节点| lchdRoot
