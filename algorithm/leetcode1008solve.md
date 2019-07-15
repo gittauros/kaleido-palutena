@@ -76,12 +76,17 @@ graph TB
         rchdRight[right]
     end
 
-    left --> lchdRoot
-    left --> lchdLeft
-    left --> lchdRight
+    left ---|小于| right
 
-    right --> rchdRoot
-    right --> rchdLeft
-    right --> rchdRight
+    left -->|根| lchdRoot
+    left -->|左子树| lchdLeft
+    left -->|右子树| lchdRight
 
+    lchdLeft ---|小于| lchdRight
+
+    right -->|根| rchdRoot
+    right -->|左子树| rchdLeft
+    right -->|右子树| rchdRight
+
+    rchdLeft ---|小于| rchdRight
 ```
