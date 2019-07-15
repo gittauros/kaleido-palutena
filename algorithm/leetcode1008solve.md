@@ -59,7 +59,6 @@ class Solution {
 
 ```mermaid
 graph TB
-
     subgraph parent
         root[root]
         left[left]
@@ -70,26 +69,17 @@ graph TB
         lchdLeft[left]
         lchdRight[right]
     end
-    subgraph rchild
-        rchdRoot[rchild]
-        rchdLeft[left]
-        rchdRight[right]
+    subgraph lchildrchild
+        lchdrchdRoot[lchildrchild]
+        lchdrchdLeft[left]
+        lchdrchdRight[right]
     end
-
-    root ---|小于| left
-    left ---|小于| right
 
     left -->|根节点| lchdRoot
     left -->|左子树| lchdLeft
     left -->|右子树| lchdRight
 
-    lchdRoot ---|小于| lchdLeft
-    lchdLeft ---|小于| lchdRight
-
-    right -->|根节点| rchdRoot
-    right -->|左子树| rchdLeft
-    right -->|右子树| rchdRight
-
-    rchdRoot ---|小于| rchdLeft
-    rchdLeft ---|小于| rchdRight
+    lchdRight -->|根节点| lchdrchdRoot
+    lchdRight -->|左子树| lchdrchdLeft
+    lchdRight -->|右子树| lchdrchdRight
 ```
