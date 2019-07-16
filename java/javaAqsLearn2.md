@@ -10,6 +10,7 @@
 - head &amp; tail 字段
 - 等待队列操作
 - 获取与释放
+- 状态变化
 
 ### 等待队列结构
 AQS内部等待队列由 Node类 与 head、tail字段构成结构，若干方法封装操作逻辑
@@ -268,7 +269,7 @@ private void setHeadAndPropagate(Node node, int propagate) {
     }
 }
 ```
-与之前不同的是setHeadAndPropagate方法，字面意思就是不仅设置head节点，还继续传播下去，也就是往队列后继续唤醒后继节点<br/>
+与之前不同的是setHeadAndPropagate方法，字面意思就是不仅设置head节点，还继续传播下去，也就是往队列的后继传播唤醒<br/>
 传入的propagate是由tryAcquireShared的返回值传入的，上一篇里说了，这个返回值是**获取后的共享资源余量**<br/>
 所以判断余量和头结点状态：
 - propagate &gt; 0，说明余量有多，从队首传播唤醒共享节点
@@ -345,4 +346,38 @@ private void doReleaseShared() {
 ```
 主要的逻辑就在doReleaseShared中，上文中在共享资源获取成功时也会触发doReleaseShared，这个方法里主要是维护了状态和传播唤醒行为<br/>
 doReleaseShared的逻辑也主要是尽可能多唤醒线程<br/>
-先判断队列不为空，如果
+- 先判断队列不为空，如果head状态为SIGNAL，尝试清除SIGNAL状态，清除成功唤醒后继节点
+- 注意head节点状态只有在其后继节点即将阻塞前（shouldParkAfterFailedAcquire方法）设置，也就是说前驱节点为SIGNAL表示后继节点被阻塞了，如果状态为0，说明后继节点未被阻塞，不需要唤醒后继节点，尝试将状态修改为PROPAGATE，将唤醒行为传播下去
+- 如果head未发生变更，则退出循环
+
+### waitStatus的变化
+继续关注下waitStatus的值，节点A状态为0只有以下几种情况：
+1. A为head节点，unparkSuccessor清除head节点状态为0
+2. A为head节点，doReleaseShared将head节点的SIGNAL状态置为0
+3. A在等待队列中，在其后继节点B加入之前至节点B将自身阻塞前，A的状态都为0
+
+前两种情况都是修改头结点，此时都是头结点的后继已经被唤醒了，基本就是用于清除状态的，需要关注的是第三种情况：<br/>
+1. 当B节点加入队列时，A节点为共享节点被C线程调用doReleaseShared唤醒了
+2. 此时A节点获取资源成功调用了setHeadAndPropagate方法
+3. 回到C线程的执行判断，发现head变更了，变成了A节点
+4. C线程取出新的head为A节点，由于B线程还未将A线程修改为SIGNAL状态，其状态为0
+5. 这时C线程将A线程状态修改为PROPAGATE状态，也就是需要向后传播
+6. 回到B线程的执行，B线程是在shouldParkAfterFailedAcquire判断ws&lt;=0的分支中，回来后使用cas操作修改状态为SIGNAL
+7. B与A线程的状态修改竞争失败，B的前驱A状态现为PROPAGATE状态
+8. 于是B线程的shouldParkAfterFailedAcquire返回false，不阻塞
+9. B线程再次竞争失败后于是将前驱A状态改为了SIGNAL，再尝试一次失败后才阻塞
+10. 或者B也是共享节点，竞争成功，就不需要阻塞了
+
+<br/>
+通过这个例子可以看出，为什么shouldParkAfterFailedAcquire方法在判断ws&lt;=0的分支不返回true，而是false让其再次竞争<br/>
+因为此时前驱节点很可能是共享节点正在往后传播唤醒行为，或者前驱节点已经被重新唤醒了，此时当前节点还是有机会争取到资源的<br/>
+也能够明白PROPAGATE状态的意义，这个状态不同于SIGNAL状态，SIGNAL状态不仅表示后继节点需要被唤醒，还表示后继应该要阻塞等待了<br/>
+而PROPAGATE状态表示唤醒行为正在被传播，其后继节点不应该被阻塞，应再次尝试获取资源
+
+### 总结
+本篇介绍了AQS具体如何实现等待和唤醒的，大致说明了状态变化的过程，简单介绍了队列的结构<br/>
+但是具体如何获取资源、释放资源，还是需要子类去实现tryXXX方法，AQS只不过是提供了个等待队列和阻塞唤醒的线程管理机制<br/>
+
+> cancelAcquire方法没有具体说明，处理的是取消操作维护队列正常状态<br/>
+> LockSupport的park不一定会阻塞，具体另外再介绍<br/>
+> Condition条件等待队列本篇未介绍
