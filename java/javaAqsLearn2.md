@@ -9,6 +9,7 @@
 - 内部类Node
 - head &amp; tail 字段
 - 等待队列操作
+- 获取与释放
 
 ### 等待队列结构
 AQS内部等待队列由 Node类 与 head、tail字段构成结构，若干方法封装操作逻辑
@@ -24,7 +25,7 @@ static final class Node {
     static final int CANCELLED =  1;//取消
     static final int SIGNAL    = -1;//待唤醒
     static final int CONDITION = -2;//等待条件中
-    static final int PROPAGATE = -3;//无条件传播
+    static final int PROPAGATE = -3;//共享模式传播唤醒
     //等待状态，具体值见上方
     volatile int waitStatus;
     //等待队列前驱节点
@@ -105,7 +106,7 @@ head一般会是当前持有锁的线程原来加入队列等待时对应的节�
 
 ### 等待队列操作
 等待队列的操作是直接在AQS中的方法，而不在Node类中，因为主要是配合head和tail字段来维护队列，Node类只是一个保存等待节点信息的数据结构而已
-###### 入队
+#### 入队
 ```java
 //入队
 private Node enq(final Node node) {
@@ -154,7 +155,11 @@ addWaiter方法其实就是率先快速做一遍尝试入队操作，失败了�
 <br/>
 addWaiter方法其实也是被其它方法调用的，会返回添加完毕后的当前节点，而其调用方就是acquire方法和doAcquireShared方法，上一篇里有说到
 
-###### 排它节点入队
+#### 出队
+入队和出队都是在一起控制的，获取锁失败入队并阻塞等待，被唤醒后获取锁成功则出队，所以接下来讲获取锁和释放锁的逻辑
+
+### 获取锁/资源
+###### 排它节点获取
 ```java
 public final void acquire(int arg) {
     if (!tryAcquire(arg) &&
@@ -215,3 +220,129 @@ acquireQueued方法也是一个自旋的模式，它先会判断本节点的前�
 如果需要阻塞等待则会进入parkAndCheckInterrupt方法，LockSupport.park会阻塞当前线程（实际上不一定会阻塞），可以被unpark唤醒也可以响应线程中断而唤醒<br/>
 被唤醒后检测线程的中断状态并返回，注意Thread.interrupted会返回中断状态但也会清除掉线程的中断状态，所以外部的acquire方法判断线程是中断唤醒时会再次调用selfInterrput方法维护中断状态，保证AQS的调用方能够正确的获取到线程的中断状态<br/>
 acquireQueued方法中还有个failed状态判断，只有当方法未获取到锁就发生了异常时这个状态才为true，说明获取锁失败，当前节点取消获取
+
+###### 共享节点获取
+```java
+public final void acquireShared(int arg) {
+    if (tryAcquireShared(arg) < 0)
+        doAcquireShared(arg);
+}
+//融合了selfInterrupt和acquireQueued逻辑
+private void doAcquireShared(int arg) {
+    final Node node = addWaiter(Node.SHARED);
+    boolean failed = true;
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head) {
+                int r = tryAcquireShared(arg);
+                if (r >= 0) {
+                    setHeadAndPropagate(node, r);
+                    p.next = null; // help GC
+                    if (interrupted)
+                        selfInterrupt();
+                    failed = false;
+                    return;
+                }
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}
+//设置头结点并且唤醒后继共享节点
+private void setHeadAndPropagate(Node node, int propagate) {
+    Node h = head; // Record old head for check below
+    setHead(node);
+    if (propagate > 0 || h == null || h.waitStatus < 0 ||
+        (h = head) == null || h.waitStatus < 0) {
+        Node s = node.next;
+        if (s == null || s.isShared())
+            //无后继，或者后继节点为共享模式，则往后唤醒
+            doReleaseShared();
+    }
+}
+```
+与之前不同的是setHeadAndPropagate方法，字面意思就是不仅设置head节点，还继续传播下去，也就是往队列后继续唤醒后继节点<br/>
+传入的propagate是由tryAcquireShared的返回值传入的，上一篇里说了，这个返回值是**获取后的共享资源余量**<br/>
+所以判断余量和头结点状态：
+- propagate &gt; 0，说明余量有多，从队首传播唤醒共享节点
+- 队列为空，从队首往后唤醒共享节点
+- 状态为PROPAGATE，说明需要传播，那么从队首往后唤醒共享节点
+- PROPAGATE会被shouldParkAfterFailedAcquire修改为SIGNAL状态，此时其后继也可能为共享节点（也就是队首为共享节点），所以从队首往后唤醒共享节点
+
+基本上这里的获取成功后的唤醒逻辑就是**唤醒所有后继的共享节点**，因为共享节点可以使用共享资源<br/>
+比如读锁的tryAcquireShared成功后永远返回1，说明余量永远足够，而信号量则是剩余的信号量，只要余量足够就去唤醒，剩下的交给各自线程自己去竞争
+
+### 释放锁/资源
+###### 排它节点释放
+```java
+public final boolean release(int arg) {
+    if (tryRelease(arg)) {
+        Node h = head;
+        if (h != null && h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
+    }
+    return false;
+}
+//唤醒节点
+private void unparkSuccessor(Node node) {
+    //清除状态
+    int ws = node.waitStatus;
+    if (ws < 0)
+        compareAndSetWaitStatus(node, ws, 0);
+    //从后往前寻找需要唤醒的节点
+    Node s = node.next;
+    if (s == null || s.waitStatus > 0) {
+        s = null;
+        for (Node t = tail; t != null && t != node; t = t.prev)
+            if (t.waitStatus <= 0)
+                s = t;
+    }
+    if (s != null)
+        LockSupport.unpark(s.thread);
+}
+```
+release方法尝试释放资源，尝试成功则开始唤醒队列<br/>
+unparkSuccessor方法传入的为head节点，head节点为哨兵节点，状态存储是否需要唤醒后继节点<br/>
+如果状态小于0（SIGNAL或PROPAGATE），则清除状态，设置为0，这一步目的是清除唤醒新号，外部会判断信号是否清除，清除掉了就不会调用unparkSuccessor触发唤醒了<br/>
+如果没有后继节点，或者后继节点状态为取消，那么从尾节点开始往前找，取出排在队列最前部的非取消节点，然后使用LockSupport.unpark唤醒该节点所在的线程<br/>
+
+###### 共享节点释放
+```java
+public final boolean releaseShared(int arg) {
+    if (tryReleaseShared(arg)) {
+        doReleaseShared();
+        return true;
+    }
+    return false;
+}
+//唤醒后继共享节点
+private void doReleaseShared() {
+    for (;;) {
+        Node h = head;
+        if (h != null && h != tail) {
+            int ws = h.waitStatus;
+            if (ws == Node.SIGNAL) {
+                if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                    continue;
+                unparkSuccessor(h);
+            }
+            else if (ws == 0 &&
+                        !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                continue;
+        }
+        if (h == head)
+            break;
+    }
+}
+```
+主要的逻辑就在doReleaseShared中，上文中在共享资源获取成功时也会触发doReleaseShared，这个方法里主要是维护了状态和传播唤醒行为<br/>
+doReleaseShared的逻辑也主要是尽可能多唤醒线程<br/>
+先判断队列不为空，如果

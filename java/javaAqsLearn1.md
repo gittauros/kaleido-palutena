@@ -124,6 +124,8 @@ public final void acquireShared(int arg) {
 - Semaphore的实现为剩余信号量数量
 - ReentrantReadWriteLock的实现为直接返回1表示获取读锁成功
 
+实际上可以理解为返回值为**获取后的共享资源余量**
+
 *doAcquireShared(arg)* 会把当前线程包装成 **共享节点** 加入等待队列并阻塞当前线程，被唤醒后会再次调用tryAcquireShared，直至成功为止
 
 ### release
