@@ -78,6 +78,7 @@ private transient volatile Node tail;
 至于condition条件等待队列，之后会讲<br/>
 <br/>
 正在运行中的队列的结构可能为：
+
 ```mermaid
 graph LR
     head(head<br/>哨兵节点)
@@ -98,6 +99,7 @@ graph LR
     D -->|next| tail
     tail -->|prev| D
 ```
+
 注意，head其实是个哨兵节点，没有实际意义，实际的等待队列第一个等待节点是head的后继节点<br/>
 head一般会是当前持有锁的线程原来加入队列等待时对应的节点（但也不一定）在获取锁后将本节点数据清除后留下来的节点
 
