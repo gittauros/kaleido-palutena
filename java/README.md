@@ -2,8 +2,8 @@
 
 > java学习笔记
 
-### AQS相关
-- [AQS源码学习 一](./javaAqsLearn1.md)
-- [AQS源码学习 二](./javaAqsLearn2.md)
-- [AQS源码学习 三](./javaAqsLearn3.md)
+- AQS
+  - [AQS源码学习 一](./javaAqsLearn1.md)
+  - [AQS源码学习 二](./javaAqsLearn2.md)
+  - [AQS源码学习 三](./javaAqsLearn3.md)
 
