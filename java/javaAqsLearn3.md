@@ -50,7 +50,6 @@ ConditionObject的条件等待队列firstWaiter是实际节点，**不是哨兵�
 
 ### 辅助方法
 条件等待和唤醒的使用就是通过await、signal、signalAll三个方法完成的，接下来会分析这三个方法的源码<br/>
-<br/>
 先看下一些会用到的辅助方法：<br/>
 ```java
 //完整释放排它资源
@@ -234,7 +233,7 @@ final boolean transferForSignal(Node node) {
 ```
 signal和signalAll方法的主要逻辑基本一致，都是判断队列不为空则进行通知，区别是signal只通知条件等待队列头结点，而signalAll通知整个队列<br/>
 <br/>
-transferForSignal会把传入的条件等待队列节点加入同步等待队列，并修改前驱节点状态为SIGNAL<br/>
+transferForSignal方法会把传入的条件等待队列节点加入同步等待队列，并修改前驱节点状态为SIGNAL<br/>
 如果前驱节点为**取消状态或者修改状态失败**，此时需要唤醒该节点线程维护该节点的状态<br/>
 从上文中已经知道，被唤醒的节点一定会进入AQS同步队列，竞争排它资源<br/>
 失败则会在acquireQueued方法中调用shouldParkAfterFailedAcquire方法维护状态正确然后再阻塞<br/>
