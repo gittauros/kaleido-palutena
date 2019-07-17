@@ -1,3 +1,4 @@
 # JAVA
 
-> java学习笔记
+> java学习笔记<br/>
+> [AQS](./javaAqsGuide.md)
