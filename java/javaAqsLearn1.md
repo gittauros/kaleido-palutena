@@ -5,9 +5,9 @@
 > java.util.concurrent.locks.AbstractQueuedSynchronizer
 
 ### 摘要
-- state字段
-- acquire方法
-- release方法
+- [state字段](#state字段)
+- [acquire方法](#acquire)
+- [release方法](#release)
 
 ### 锁/竞争资源
 AQS直译就是“抽象队列同步器”，有如下功能：
@@ -40,7 +40,7 @@ block -->|否| failCode
 failCode --> e
 ```
 
-### volatile int state
+### state字段
 ```java
 //同步状态字段
 private volatile int state;

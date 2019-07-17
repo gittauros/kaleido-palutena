@@ -2,15 +2,15 @@
 
 ### 关键信息
 > jdk 1.8<br/>
-> java.util.concurrent.locks.AbstractQueuedSynchronizer
+> java.util.concurrent.locks.AbstractQueuedSynchronizer<br/>
+> java.util.concurrent.locks.AbstractQueuedSynchronizer.Node
 
 ### 摘要
-- 等待队列结构
-- 内部类Node
-- head &amp; tail 字段
-- 等待队列操作
-- 获取与释放
-- 状态变化
+- [等待队列结构](#等待队列结构)
+- [等待队列操作](#等待队列操作)
+- [获取资源](#获取锁/资源)
+- [释放资源](#释放锁/资源)
+- [状态变化](#waitStatus的变化)
 
 ### 等待队列结构
 AQS内部等待队列由 Node类 与 head、tail字段构成结构，若干方法封装操作逻辑
@@ -212,7 +212,7 @@ private final boolean parkAndCheckInterrupt() {
 ```
 acquireQueued方法也是一个自旋的模式，它先会判断本节点的前驱是否为head(哨兵)，也就是说本节点是否已经在队首<br/>
 在队首的节点可以去尝试获取锁，也就是调用tryAcquire方法<br/>
-如果成功了，会将本节点设置为头结点，setHead方法里会把节点持有的线程信息和前驱节点信息清除，然后将本节点的前驱节的后继清除，返回线程的中断状态<br/>
+如果成功了，会将本节点设置为头结点，setHead方法里会把节点持有的线程信息和前驱节点信息清除，然后将本节点的前驱（原head节点）的后继清除，返回线程的中断状态<br/>
 失败则会进入shouldParkAfterFailedAcquire方法，这个方法维护前驱节点的状态，返回本节点是否需要阻塞等待：
 - 前驱节点的状态为SIGNAL，说明前驱也在等待，所以本节点也就乖乖阻塞等待好了
 - 前驱节点状态大于0，其实就是取消状态，那么把所有取消状态的前驱清除，返回false，再次尝试获取锁
